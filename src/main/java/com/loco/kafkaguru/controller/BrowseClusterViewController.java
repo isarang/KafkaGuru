@@ -260,8 +260,9 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
             case CLUSTER:
                 break;
             case TOPIC:
-            case PARTITION:
                 settings.setSelectedTopic(topicNode.getTopic());
+                break;
+            case PARTITION:
                 break;
         }
         treeSelectionListeners.forEach(listener -> listener.currentNodeChanged(selectedNode));
