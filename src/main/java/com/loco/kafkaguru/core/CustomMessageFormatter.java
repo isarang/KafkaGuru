@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import com.loco.kafkaguru.MessageFormatter;
+import lombok.var;
 
 public class CustomMessageFormatter implements MessageFormatter {
     private Object foreignFormatter;

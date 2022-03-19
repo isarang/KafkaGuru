@@ -1,12 +1,12 @@
 package com.loco.kafkaguru.controller;
 
 import com.loco.kafkaguru.model.KafkaClusterInfo;
-import lombok.extern.log4j.Log4j2;
-
 import java.util.*;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
+import lombok.extern.log4j.Log4j2;
+import lombok.var;
 
 @Log4j2
 public class MigrationHelper {
@@ -83,9 +83,11 @@ public class MigrationHelper {
         for (var tabNode : tabNodes) {
             var clusterName = tabNode.get("cluster_id", null);
             ;
-            var cluster = clusters.values().stream()
-                    .filter(c -> c.getName().equals(clusterName))
-                    .findFirst().orElse(null);
+            var cluster =
+                    clusters.values().stream()
+                            .filter(c -> c.getName().equals(clusterName))
+                            .findFirst()
+                            .orElse(null);
             if (cluster == null) {
                 log.error(
                         "Tab with name {} could not be loaded, because "

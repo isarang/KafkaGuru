@@ -13,6 +13,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.jar.JarFile;
+import lombok.var;
 
 class PluginInfo {
     public Map<String, String[]> classes = new HashMap<>();
@@ -115,7 +116,7 @@ public class PluginLoader extends ClassLoader {
         }
         URL[] urls = new URL[0];
         try {
-            urls = new URL[] { new URL("jar:file:" + jarFile.getName() + "!/") };
+            urls = new URL[] {new URL("jar:file:" + jarFile.getName() + "!/")};
         } catch (MalformedURLException ex) {
             ex.printStackTrace();
         }

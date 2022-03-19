@@ -3,6 +3,7 @@ package com.loco.kafkaguru.viewmodel;
 import com.loco.kafkaguru.MessageFormatter;
 import com.loco.kafkaguru.core.PluginLoader;
 import javafx.beans.property.*;
+import lombok.var;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.text.SimpleDateFormat;

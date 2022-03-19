@@ -14,6 +14,7 @@ import javafx.scene.control.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
+import lombok.var;
 import org.apache.kafka.common.PartitionInfo;
 
 import java.io.File;
@@ -25,18 +26,14 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 @Log4j2
-public class MainWindowController implements Initializable, ControllerListener, KafkaConnectionListener {
-    @FXML
-    private MenuItem newClusterMenuItem;
-    @FXML
-    private Menu openClusterMenu;
-    @FXML
-    private MenuItem closeClusterMenuItem;
-    @FXML
-    private Menu removeClusterMenu;
+public class MainWindowController
+        implements Initializable, ControllerListener, KafkaConnectionListener {
+    @FXML private MenuItem newClusterMenuItem;
+    @FXML private Menu openClusterMenu;
+    @FXML private MenuItem closeClusterMenuItem;
+    @FXML private Menu removeClusterMenu;
 
-    @FXML
-    private TabPane tabPane;
+    @FXML private TabPane tabPane;
 
     // private Preferences preferences;
     private MainWindowSettings settings;
@@ -87,29 +84,45 @@ public class MainWindowController implements Initializable, ControllerListener, 
         }
     }
 
-    private void createControllersAndTabs(MainWindowSettings settings, Map<String, KafkaViewController> controllers,
+    private void createControllersAndTabs(
+            MainWindowSettings settings,
+            Map<String, KafkaViewController> controllers,
             ObservableList<Tab> tabs) {
-        clusters.values().forEach(cluster -> {
-            var clusterTabSettings = settings.getClusterTabs().get(cluster.getId());
-            clusterTabSettings.stream().forEach(tabSettings -> {
-                var kafkaInstance = createKafkaInstance(cluster);
-                var controller = new KafkaViewController(kafkaInstance, tabSettings, settings.getTopicFormats());
-                String tabId = UUID.randomUUID().toString();
-                controllers.put(tabId, controller);
-                var tabName = createTabName(cluster);
-                var tab = createTab(tabId, tabName, controller);
-                tabs.add(tab);
-            });
-        });
+        clusters.values()
+                .forEach(
+                        cluster -> {
+                            var clusterTabSettings = settings.getClusterTabs().get(cluster.getId());
+                            clusterTabSettings.stream()
+                                    .forEach(
+                                            tabSettings -> {
+                                                var kafkaInstance = createKafkaInstance(cluster);
+                                                var controller =
+                                                        new KafkaViewController(
+                                                                kafkaInstance,
+                                                                tabSettings,
+                                                                settings.getTopicFormats());
+                                                String tabId = UUID.randomUUID().toString();
+                                                controllers.put(tabId, controller);
+                                                var tabName = createTabName(cluster);
+                                                var tab = createTab(tabId, tabName, controller);
+                                                tabs.add(tab);
+                                            });
+                        });
     }
 
     private String createTabName(KafkaClusterInfo cluster) {
         var clusterName = cluster.getName();
         var controllerName = clusterName;
         byte i = 2;
-        var tabNames = tabPane.getTabs().stream()
-                .filter(tab -> ((KafkaViewController) tab.getUserData()).getClusterId().equals(cluster.getId()))
-                .map(tab -> tab.getText()).collect(Collectors.toSet());
+        var tabNames =
+                tabPane.getTabs().stream()
+                        .filter(
+                                tab ->
+                                        ((KafkaViewController) tab.getUserData())
+                                                .getClusterId()
+                                                .equals(cluster.getId()))
+                        .map(tab -> tab.getText())
+                        .collect(Collectors.toSet());
 
         do {
             if (!tabNames.contains(controllerName)) {
@@ -133,10 +146,12 @@ public class MainWindowController implements Initializable, ControllerListener, 
     }
 
     private void createMenuItems(Map<String, KafkaClusterInfo> clusters) {
-        clusters.values().forEach(cluster -> {
-            createOpenClusterMenuItem(cluster);
-            createRemoveClusterMenuItem(cluster);
-        });
+        clusters.values()
+                .forEach(
+                        cluster -> {
+                            createOpenClusterMenuItem(cluster);
+                            createRemoveClusterMenuItem(cluster);
+                        });
     }
 
     private void createOpenClusterMenuItem(KafkaClusterInfo cluster) {
@@ -175,9 +190,11 @@ public class MainWindowController implements Initializable, ControllerListener, 
         saveSettings();
     }
 
-    private KafkaViewController createController(KafkaClusterInfo cluster, TabSettings tabSettings) {
+    private KafkaViewController createController(
+            KafkaClusterInfo cluster, TabSettings tabSettings) {
         var kafkaInstance = createKafkaInstance(cluster);
-        var controller = new KafkaViewController(kafkaInstance, tabSettings, settings.getTopicFormats());
+        var controller =
+                new KafkaViewController(kafkaInstance, tabSettings, settings.getTopicFormats());
         return controller;
     }
 
@@ -217,7 +234,8 @@ public class MainWindowController implements Initializable, ControllerListener, 
     }
 
     public void onRemoveCluster(ActionEvent event) {
-        boolean removeTabs = getConfirmation("Removing the cluster will close associated tabs. Proceed?");
+        boolean removeTabs =
+                getConfirmation("Removing the cluster will close associated tabs. Proceed?");
         if (!removeTabs) {
             return;
         }
@@ -235,9 +253,11 @@ public class MainWindowController implements Initializable, ControllerListener, 
     private void removeTabs(String clusterId) {
         var tabIds = settings.getClusterTabs().remove(clusterId);
 
-        var clusterControllerIds = controllers.entrySet().stream()
-                .filter(entry -> entry.getValue().getClusterId().equals(clusterId)).map(entry -> entry.getKey())
-                .collect(Collectors.toList());
+        var clusterControllerIds =
+                controllers.entrySet().stream()
+                        .filter(entry -> entry.getValue().getClusterId().equals(clusterId))
+                        .map(entry -> entry.getKey())
+                        .collect(Collectors.toList());
 
         clusterControllerIds.forEach(id -> controllers.remove(id));
 
@@ -270,8 +290,10 @@ public class MainWindowController implements Initializable, ControllerListener, 
     }
 
     private boolean getConfirmation(String msg) {
-        return new Alert(Alert.AlertType.CONFIRMATION, msg, ButtonType.YES, ButtonType.NO).showAndWait()
-                .orElse(ButtonType.NO).equals(ButtonType.YES);
+        return new Alert(Alert.AlertType.CONFIRMATION, msg, ButtonType.YES, ButtonType.NO)
+                .showAndWait()
+                .orElse(ButtonType.NO)
+                .equals(ButtonType.YES);
     }
 
     // @Override
@@ -281,14 +303,10 @@ public class MainWindowController implements Initializable, ControllerListener, 
     }
 
     @Override
-    public void connectionFailed(String name) {
-
-    }
+    public void connectionFailed(String name) {}
 
     @Override
-    public void topicsUpdated(Map<String, List<PartitionInfo>> topics) {
-
-    }
+    public void topicsUpdated(Map<String, List<PartitionInfo>> topics) {}
 
     @Override
     public void notifyUrlChange(String clusterId, String oldUrl, String newUrl) {
@@ -311,13 +329,16 @@ public class MainWindowController implements Initializable, ControllerListener, 
 
         var clusterControllers = getControllers(clusterId);
 
-        var tabs = tabPane.getTabs().stream().filter(tab -> clusterControllers.contains(tab.getUserData()))
-                .collect(Collectors.toList());
-        tabs.forEach(tab -> {
-            var oldText = tab.getText();
-            var newText = rename(oldText, oldName, newName);
-            tab.setText(newText);
-        });
+        var tabs =
+                tabPane.getTabs().stream()
+                        .filter(tab -> clusterControllers.contains(tab.getUserData()))
+                        .collect(Collectors.toList());
+        tabs.forEach(
+                tab -> {
+                    var oldText = tab.getText();
+                    var newText = rename(oldText, oldName, newName);
+                    tab.setText(newText);
+                });
 
         renameMenuItems(openClusterMenu, clusterId, newName);
         renameMenuItems(removeClusterMenu, clusterId, newName);
@@ -326,12 +347,17 @@ public class MainWindowController implements Initializable, ControllerListener, 
     }
 
     private List<KafkaViewController> getControllers(String clusterId) {
-        return controllers.values().stream().filter(c -> c.getClusterId().equals(clusterId))
+        return controllers.values().stream()
+                .filter(c -> c.getClusterId().equals(clusterId))
                 .collect(Collectors.toList());
     }
 
     private void renameMenuItems(Menu menu, String clusterId, String newName) {
-        var menuItem = menu.getItems().stream().filter(item -> clusterId.equals(item.getId())).findFirst().orElse(null);
+        var menuItem =
+                menu.getItems().stream()
+                        .filter(item -> clusterId.equals(item.getId()))
+                        .findFirst()
+                        .orElse(null);
         if (menuItem != null) {
             menuItem.setText(newName);
         }

@@ -14,6 +14,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+import lombok.var;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.PartitionInfo;
 
@@ -21,9 +22,9 @@ import java.net.URL;
 import java.util.*;
 
 @Log4j2
-public class KafkaViewController implements Initializable, KafkaConnectionListener, ClusterItemSelectionListener {
-    @Getter
-    private final String clusterId;
+public class KafkaViewController
+        implements Initializable, KafkaConnectionListener, ClusterItemSelectionListener {
+    @Getter private final String clusterId;
 
     @Getter
     // private final String id = "";
@@ -32,20 +33,19 @@ public class KafkaViewController implements Initializable, KafkaConnectionListen
     private BrowseClusterItemViewController browseClusterItemController;
 
     // UI controls
-    @FXML
-    private SplitPane topicsMessagesPane;
+    @FXML private SplitPane topicsMessagesPane;
 
     // data fields
     private KafkaInstance kafkaInstance;
 
-    @Getter
-    private TabSettings settings;
+    @Getter private TabSettings settings;
 
     private DoubleProperty topicMessageDividerPos = new SimpleDoubleProperty(0.15);
 
     private ChangeListener<Number> dividerListener;
 
-    public KafkaViewController(KafkaInstance kafkaInstance, TabSettings settings, Map<String, String> topicFormats) {
+    public KafkaViewController(
+            KafkaInstance kafkaInstance, TabSettings settings, Map<String, String> topicFormats) {
         clusterId = kafkaInstance.getClusterInfo().getId();
         this.settings = settings;
         if (kafkaInstance == null) {
@@ -56,10 +56,12 @@ public class KafkaViewController implements Initializable, KafkaConnectionListen
         kafkaInstance.addConnectionListener(this);
         var kafkaReader = new KafkaReader(kafkaInstance);
 
-        browseClusterController = new BrowseClusterViewController(kafkaReader, settings.getClusterViewSettings(),
-                topicFormats);
-        browseClusterItemController = new BrowseClusterItemViewController(kafkaReader,
-                settings.getCusterItemViewSettings());
+        browseClusterController =
+                new BrowseClusterViewController(
+                        kafkaReader, settings.getClusterViewSettings(), topicFormats);
+        browseClusterItemController =
+                new BrowseClusterItemViewController(
+                        kafkaReader, settings.getCusterItemViewSettings());
 
         browseClusterController.addItemSelectionListener(browseClusterItemController);
         browseClusterController.addItemSelectionListener(this);
@@ -74,7 +76,9 @@ public class KafkaViewController implements Initializable, KafkaConnectionListen
         topicsMessagesPane.getItems().add(browseClusterItemView);
 
         topicMessageDividerPos = topicsMessagesPane.getDividers().get(0).positionProperty();
-        dividerListener = (observable, oldValue, newValue) -> settings.setDividerPosition(newValue.doubleValue());
+        dividerListener =
+                (observable, oldValue, newValue) ->
+                        settings.setDividerPosition(newValue.doubleValue());
         var lastDividerPos = settings.getDividerPosition();
         topicMessageDividerPos.set(lastDividerPos);
 
@@ -85,34 +89,29 @@ public class KafkaViewController implements Initializable, KafkaConnectionListen
     }
 
     @Override
-    public void connectionFailed(String name) {
-
-    }
+    public void connectionFailed(String name) {}
 
     @Override
     public void topicsUpdated(Map<String, List<PartitionInfo>> topics) {
-        Platform.runLater(() -> {
-            topicMessageDividerPos.removeListener(dividerListener);
-            var lastDividerPos = settings.getDividerPosition();
-            browseClusterController.updateTopicsTree(topics);
-            topicMessageDividerPos.set(lastDividerPos);
-            topicMessageDividerPos.addListener(dividerListener);
-        });
+        Platform.runLater(
+                () -> {
+                    topicMessageDividerPos.removeListener(dividerListener);
+                    var lastDividerPos = settings.getDividerPosition();
+                    browseClusterController.updateTopicsTree(topics);
+                    topicMessageDividerPos.set(lastDividerPos);
+                    topicMessageDividerPos.addListener(dividerListener);
+                });
     }
 
     @Override
-    public void notifyUrlChange(String name, String oldUrl, String newUrl) {
-    }
+    public void notifyUrlChange(String name, String oldUrl, String newUrl) {}
 
     @Override
-    public void notifyNameChange(String id, String oldName, String newName) {
-    }
+    public void notifyNameChange(String id, String oldName, String newName) {}
 
     @Override
-    public void currentNodeChanged(AbstractNode selectedNode) {
-    }
+    public void currentNodeChanged(AbstractNode selectedNode) {}
 
     @Override
-    public void messageFormatChanged(String topic) {
-    }
+    public void messageFormatChanged(String topic) {}
 }

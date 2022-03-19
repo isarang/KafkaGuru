@@ -4,6 +4,7 @@ import com.loco.kafkaguru.core.listeners.KafkaMessagesListener;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.log4j.Log4j2;
+import lombok.var;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
@@ -28,8 +29,12 @@ public class KafkaReader {
         this.kafkaInstance = instance;
     }
 
-    private void fetchMessages(@NonNull List<TopicPartition> topicPartitions, int maxMessageCount, long fetchFrom,
-            KafkaMessagesListener listener, Object sender) {
+    private void fetchMessages(
+            @NonNull List<TopicPartition> topicPartitions,
+            int maxMessageCount,
+            long fetchFrom,
+            KafkaMessagesListener listener,
+            Object sender) {
         log.info("Getting messages");
 
         if (topicPartitions.isEmpty()) {
@@ -64,13 +69,20 @@ public class KafkaReader {
             }
             abortReceived = false;
 
-            log.info("Finished reading {} messages from topic: {} in {} seconds.", totalCount, topic,
+            log.info(
+                    "Finished reading {} messages from topic: {} in {} seconds.",
+                    totalCount,
+                    topic,
                     stopWatch.getTime(TimeUnit.SECONDS));
         }
     }
 
-    private void fetchMessagesFromEpoch(List<TopicPartition> topicPartitions, int maxMessageCount, long epochMilli,
-            KafkaMessagesListener listener, Object sender) {
+    private void fetchMessagesFromEpoch(
+            List<TopicPartition> topicPartitions,
+            int maxMessageCount,
+            long epochMilli,
+            KafkaMessagesListener listener,
+            Object sender) {
 
         String topic = topicPartitions.get(0).topic();
         log.info("Fetching {} messages from topic {}", maxMessageCount, topic);
@@ -79,15 +91,17 @@ public class KafkaReader {
         synchronized (kafkaInstance) {
             // TODO ensure that all partitions are from the same topic?
             kafkaInstance.assign(topicPartitions);
-            var partitionTimestampMap = topicPartitions.stream().collect(Collectors.toMap(tp -> tp, tp -> epochMilli));
-            Map<TopicPartition, OffsetAndTimestamp> partitionOffsetMap = kafkaInstance.getConsumer()
-                    .offsetsForTimes(partitionTimestampMap);
+            var partitionTimestampMap =
+                    topicPartitions.stream().collect(Collectors.toMap(tp -> tp, tp -> epochMilli));
+            Map<TopicPartition, OffsetAndTimestamp> partitionOffsetMap =
+                    kafkaInstance.getConsumer().offsetsForTimes(partitionTimestampMap);
 
-            partitionOffsetMap.forEach((tp, offsetAndTimestamp) -> {
-                    if (offsetAndTimestamp != null) {
-                        kafkaInstance.getConsumer().seek(tp, offsetAndTimestamp.offset());
-                    }
-            });
+            partitionOffsetMap.forEach(
+                    (tp, offsetAndTimestamp) -> {
+                        if (offsetAndTimestamp != null) {
+                            kafkaInstance.getConsumer().seek(tp, offsetAndTimestamp.offset());
+                        }
+                    });
 
             var more = true;
             var totalCount = 0;
@@ -102,7 +116,10 @@ public class KafkaReader {
                 listener.messagesReceived(batch, sender, batchNumber, more);
             }
 
-            log.info("Finished reading {} messages from topic: {} in {} seconds.", totalCount, topic,
+            log.info(
+                    "Finished reading {} messages from topic: {} in {} seconds.",
+                    totalCount,
+                    topic,
                     stopWatch.getTime(TimeUnit.SECONDS));
         }
     }
@@ -131,7 +148,8 @@ public class KafkaReader {
             default:
                 if (partitionOffsets.size() != 1) {
                     throw new IllegalArgumentException(
-                            "loading from specific" + " offset is possible only if single partition is provided");
+                            "loading from specific"
+                                    + " offset is possible only if single partition is provided");
                 }
                 seekTo(partitionOffsets.get(0), fetchFrom);
                 break;
@@ -151,7 +169,8 @@ public class KafkaReader {
         for (PartitionOffset po : partitionOffsets) {
             if (po.getEndOffset() > po.getStartOffset()) {
                 int messagesToFetch = remainingMessages / remainingPartitions;
-                long startOffset = Math.max(po.getEndOffset() - messagesToFetch, po.getStartOffset());
+                long startOffset =
+                        Math.max(po.getEndOffset() - messagesToFetch, po.getStartOffset());
                 seekTo(po, startOffset);
                 int availableMessages = (int) (po.getEndOffset() - startOffset);
                 remainingMessages -= availableMessages;
@@ -164,30 +183,43 @@ public class KafkaReader {
         kafkaInstance.seek(po.getTopicPartition(), offset);
     }
 
-    public void getMessagesAsync(List<TopicPartition> topicPartitions, int limit, long fetchFrom,
-            KafkaMessagesListener listener, Object sender) {
+    public void getMessagesAsync(
+            List<TopicPartition> topicPartitions,
+            int limit,
+            long fetchFrom,
+            KafkaMessagesListener listener,
+            Object sender) {
         log.info("In getMessagesAsync()");
-        new Thread(() -> {
-            log.info("calling getMessages()");
-            try {
-                fetchMessages(topicPartitions, limit, fetchFrom, listener, sender);
-            } catch (Exception e) {
-                listener.messagesReceived(null, sender, 0, false);
-            }
-        }).start();
+        new Thread(
+                        () -> {
+                            log.info("calling getMessages()");
+                            try {
+                                fetchMessages(topicPartitions, limit, fetchFrom, listener, sender);
+                            } catch (Exception e) {
+                                listener.messagesReceived(null, sender, 0, false);
+                            }
+                        })
+                .start();
     }
 
-    public void getMessagesFromTimeAsync(List<TopicPartition> topicPartitions, int limit, long epochMilli,
-            KafkaMessagesListener listener, Object sender) {
+    public void getMessagesFromTimeAsync(
+            List<TopicPartition> topicPartitions,
+            int limit,
+            long epochMilli,
+            KafkaMessagesListener listener,
+            Object sender) {
         log.info("In getMessagesAsync()");
-        new Thread(() -> {
-            log.info("calling getMessages()");
-            try {
-                fetchMessagesFromEpoch(topicPartitions, limit, epochMilli, listener, sender);
-            } catch (Exception e) {
-                listener.messagesReceived(null, sender, 0, false);
-            }
-        }).start();
+        new Thread(
+                        () -> {
+                            log.info("calling getMessages()");
+                            try {
+                                fetchMessagesFromEpoch(
+                                        topicPartitions, limit, epochMilli, listener, sender);
+                            } catch (Exception e) {
+                                listener.messagesReceived(null, sender, 0, false);
+                            }
+                        })
+                .start();
     }
 
     public void abortCurrentCalls() {

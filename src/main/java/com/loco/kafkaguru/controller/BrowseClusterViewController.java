@@ -18,6 +18,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import lombok.extern.log4j.Log4j2;
+import lombok.var;
 import org.apache.kafka.common.PartitionInfo;
 
 import java.net.URL;
@@ -26,12 +27,9 @@ import java.util.stream.Collectors;
 
 @Log4j2
 public class BrowseClusterViewController implements Initializable, KafkaConnectionListener {
-    @FXML
-    private TitledPane topicsPane;
-    @FXML
-    private TreeView<AbstractNode> topicsTree;
-    @FXML
-    private CheckBox followSelectionCheck;
+    @FXML private TitledPane topicsPane;
+    @FXML private TreeView<AbstractNode> topicsTree;
+    @FXML private CheckBox followSelectionCheck;
 
     private ContextMenu topicContextMenu;
     private ClusterViewSettings settings;
@@ -43,7 +41,9 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
     private Map<String, String> topicFormats;
     private AbstractNode selectedNode;
 
-    public BrowseClusterViewController(KafkaReader kafkaReader, ClusterViewSettings settings,
+    public BrowseClusterViewController(
+            KafkaReader kafkaReader,
+            ClusterViewSettings settings,
             Map<String, String> topicFormats) {
         this.settings = settings;
         this.clusterNode = new ClusterNode(kafkaReader.getKafkaInstance());
@@ -58,20 +58,26 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
         setupPreferencesView();
     }
 
-    private void setupPreferencesView() {
-    }
+    private void setupPreferencesView() {}
 
     private void setupTopicsTree() {
         topicsTree.setShowRoot(true);
         var rootItem = new TreeItem<AbstractNode>(clusterNode);
         topicsTree.setRoot(rootItem);
-        topicsTree.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<>() {
-            @Override
-            public void changed(ObservableValue<? extends TreeItem<AbstractNode>> observableValue,
-                    TreeItem<AbstractNode> oldItem, TreeItem<AbstractNode> newItem) {
-                treeSelectionChanged(newItem);
-            }
-        });
+        topicsTree
+                .getSelectionModel()
+                .selectedItemProperty()
+                .addListener(
+                        new ChangeListener<TreeItem<AbstractNode>>() {
+                            @Override
+                            public void changed(
+                                    ObservableValue<? extends TreeItem<AbstractNode>>
+                                            observableValue,
+                                    TreeItem<AbstractNode> oldItem,
+                                    TreeItem<AbstractNode> newItem) {
+                                treeSelectionChanged(newItem);
+                            }
+                        });
 
         topicContextMenu = new ContextMenu();
         var headerItem = new MenuItem("Select Message Format");
@@ -84,24 +90,28 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
             topicContextMenu.getItems().add(menuItem);
             menuItem.setOnAction(this::messageFormatChanged);
         }
-        topicsTree.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
-            if (e.getButton() == MouseButton.SECONDARY) {
-                TreeItem<AbstractNode> selected = topicsTree.getSelectionModel().getSelectedItem();
+        topicsTree.addEventHandler(
+                MouseEvent.MOUSE_RELEASED,
+                e -> {
+                    if (e.getButton() == MouseButton.SECONDARY) {
+                        TreeItem<AbstractNode> selected =
+                                topicsTree.getSelectionModel().getSelectedItem();
 
-                // item is selected - this prevents fail when clicking on empty space
-                if (selected != null) {
-                    // open context menu on current screen position
-                    openContextMenu(selected, e.getScreenX(), e.getScreenY());
-                }
-            } else {
-                // any other click cause hiding menu
-                topicContextMenu.hide();
-            }
-        });
+                        // item is selected - this prevents fail when clicking on empty space
+                        if (selected != null) {
+                            // open context menu on current screen position
+                            openContextMenu(selected, e.getScreenX(), e.getScreenY());
+                        }
+                    } else {
+                        // any other click cause hiding menu
+                        topicContextMenu.hide();
+                    }
+                });
 
-        Platform.runLater(() -> {
-            topicsTree.getSelectionModel().select(rootItem);
-        });
+        Platform.runLater(
+                () -> {
+                    topicsTree.getSelectionModel().select(rootItem);
+                });
     }
 
     private TopicNode getTopicNode(AbstractNode node) {
@@ -120,39 +130,53 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
 
         // show menu
         topicContextMenu.show(topicsTree, x, y);
-        topicContextMenu.getItems().forEach(item -> {
-            if (item instanceof RadioMenuItem) {
-                var radioItem = (RadioMenuItem) item;
-                radioItem.setSelected(false);
-                // TODO use treeItem
-                var node = getTopicNode(treeItem.getValue());
-                if (item.getUserData() != null && node != null) {
-                    if (radioItem.getUserData().equals(node.getFormatter().name())) {
-                        radioItem.setSelected(true);
-                    }
-                }
-            }
-        });
+        topicContextMenu
+                .getItems()
+                .forEach(
+                        item -> {
+                            if (item instanceof RadioMenuItem) {
+                                var radioItem = (RadioMenuItem) item;
+                                radioItem.setSelected(false);
+                                // TODO use treeItem
+                                var node = getTopicNode(treeItem.getValue());
+                                if (item.getUserData() != null && node != null) {
+                                    if (radioItem
+                                            .getUserData()
+                                            .equals(node.getFormatter().name())) {
+                                        radioItem.setSelected(true);
+                                    }
+                                }
+                            }
+                        });
     }
 
     private TreeItem<AbstractNode> getLastSelectedTreeItem(TreeItem<AbstractNode> rootNode) {
         var topic = settings.getSelectedTopic();
-        var topicNode = rootNode.getChildren().stream().filter(node -> {
-            return topic.equals(((TopicNode) node.getValue()).getTopic());
-        }).findFirst().orElse(null);
+        var topicNode =
+                rootNode.getChildren().stream()
+                        .filter(
+                                node -> {
+                                    return topic.equals(((TopicNode) node.getValue()).getTopic());
+                                })
+                        .findFirst()
+                        .orElse(null);
 
         return topicNode;
     }
 
-    private void createTopicNodes(ClusterNode clusterNode, Map<String, List<PartitionInfo>> topics) {
+    private void createTopicNodes(
+            ClusterNode clusterNode, Map<String, List<PartitionInfo>> topics) {
         log.info("Creating topic nodes");
-        var topicNodes = topics.entrySet().stream().map(entry -> createTopicNode(clusterNode, entry))
-                .collect(Collectors.toList());
+        var topicNodes =
+                topics.entrySet().stream()
+                        .map(entry -> createTopicNode(clusterNode, entry))
+                        .collect(Collectors.toList());
 
         clusterNode.setTopicNodes(topicNodes);
     }
 
-    private TopicNode createTopicNode(ClusterNode clusterNode, Map.Entry<String, List<PartitionInfo>> entry) {
+    private TopicNode createTopicNode(
+            ClusterNode clusterNode, Map.Entry<String, List<PartitionInfo>> entry) {
         var topicNode = new TopicNode(clusterNode, entry.getKey(), entry.getValue());
         // TODO remove partition node creation logic out of TopicNode class
         topicNode.setFormatter(getFormatter(topicNode.getTopic()));
@@ -160,8 +184,10 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
     }
 
     private List<TreeItem<AbstractNode>> createTopicItems(ClusterNode clusterNode) {
-        var topicNodes = clusterNode.getTopicNodes().stream().map(topicNode -> createTopicItem(topicNode))
-                .collect(Collectors.toList());
+        var topicNodes =
+                clusterNode.getTopicNodes().stream()
+                        .map(topicNode -> createTopicItem(topicNode))
+                        .collect(Collectors.toList());
         return topicNodes;
     }
 
@@ -175,7 +201,9 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
     }
 
     private List<TreeItem<AbstractNode>> createPartitionItems(TopicNode topicNode) {
-        return topicNode.getPartitions().stream().map(p -> new TreeItem<AbstractNode>(p)).collect(Collectors.toList());
+        return topicNode.getPartitions().stream()
+                .map(p -> new TreeItem<AbstractNode>(p))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -184,8 +212,7 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
     }
 
     @Override
-    public void topicsUpdated(Map<String, List<PartitionInfo>> newTopics) {
-    }
+    public void topicsUpdated(Map<String, List<PartitionInfo>> newTopics) {}
 
     void updateTopicsTree(Map<String, List<PartitionInfo>> newTopics) {
         if (newTopics == topics) {
@@ -200,7 +227,11 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
             createTopicNodes(clusterNode, topics);
             var topicItems = createTopicItems(clusterNode);
 
-            topicItems.sort((ti1, ti2) -> ti1.getValue().toString().compareToIgnoreCase(ti2.getValue().toString()));
+            topicItems.sort(
+                    (ti1, ti2) ->
+                            ti1.getValue()
+                                    .toString()
+                                    .compareToIgnoreCase(ti2.getValue().toString()));
 
             rootNode.getChildren().addAll(topicItems);
 
@@ -219,7 +250,9 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
         if (newItem == null) {
             return;
         }
-        log.info("Tree selection changed. old = {}, new = {}", selectedNode == null ? null : selectedNode.toString(),
+        log.info(
+                "Tree selection changed. old = {}, new = {}",
+                selectedNode == null ? null : selectedNode.toString(),
                 newItem.getValue());
         selectedNode = newItem.getValue();
         TopicNode topicNode = getTopicNode(selectedNode);
@@ -258,7 +291,8 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
             topicNode.setFormatter(formatter);
             // messagesModel.setMessages(currentTopicNode.getMessages());
             topicFormats.put(topicNode.getTopic(), formatterName);
-            treeSelectionListeners.forEach(listener -> listener.messageFormatChanged(topicNode.getTopic()));
+            treeSelectionListeners.forEach(
+                    listener -> listener.messageFormatChanged(topicNode.getTopic()));
         } else {
             log.info("Selected topic is null");
         }
@@ -273,8 +307,7 @@ public class BrowseClusterViewController implements Initializable, KafkaConnecti
     }
 
     @Override
-    public void notifyUrlChange(String name, String oldUrl, String newUrl) {
-    }
+    public void notifyUrlChange(String name, String oldUrl, String newUrl) {}
 
     @Override
     public void notifyNameChange(String id, String oldName, String newName) {

@@ -18,6 +18,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import lombok.extern.log4j.Log4j2;
+import lombok.var;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.PartitionInfo;
@@ -37,79 +38,55 @@ import org.fxmisc.richtext.CodeArea;
 
 @Log4j2
 public class BrowseClusterItemViewController
-        implements Initializable, ClusterItemSelectionListener, KafkaMessagesListener, KafkaConnectionListener {
+        implements Initializable,
+                ClusterItemSelectionListener,
+                KafkaMessagesListener,
+                KafkaConnectionListener {
     private static final String SAVE_MESSAGE_DIR = "Saved Messages";
 
-    @FXML
-    private VBox mainLayout;
-    @FXML
-    private AnchorPane clusterDetailsPane;
-    @FXML
-    private HBox messagesBox;
+    @FXML private VBox mainLayout;
+    @FXML private AnchorPane clusterDetailsPane;
+    @FXML private HBox messagesBox;
 
-    @FXML
-    private TextField clusterNameField;
-    @FXML
-    private TextField kafkaUrlField;
-    @FXML
-    private Button connectButton;
+    @FXML private TextField clusterNameField;
+    @FXML private TextField kafkaUrlField;
+    @FXML private Button connectButton;
 
     // messages toolbar
-    @FXML
-    private Button refreshButton;
-    @FXML
-    private TextField includeField;
-    @FXML
-    private TextField excludeField;
-    @FXML
-    Button collapseSettingsButton;
+    @FXML private Button refreshButton;
+    @FXML private TextField includeField;
+    @FXML private TextField excludeField;
+    @FXML Button collapseSettingsButton;
 
     // message load settings
-    @FXML
-    private TitledPane settingsPane;
-    @FXML
-    private GridPane settingsGrid;
-    @FXML
-    private ComboBox<String> messageCountBox;
-    @FXML
-    private ComboBox<String> fetchFromBox;
+    @FXML private TitledPane settingsPane;
+    @FXML private GridPane settingsGrid;
+    @FXML private ComboBox<String> messageCountBox;
+    @FXML private ComboBox<String> fetchFromBox;
 
-    @FXML
-    private Label dateLabel;
-    @FXML
-    private Label timeLabel;
-    @FXML
-    private Label offsetLabel;
+    @FXML private Label dateLabel;
+    @FXML private Label timeLabel;
+    @FXML private Label offsetLabel;
 
-    @FXML
-    private DatePicker datePicker;
-    @FXML
-    private TextField timeField;
-    @FXML
-    private TextField offsetField;
+    @FXML private DatePicker datePicker;
+    @FXML private TextField timeField;
+    @FXML private TextField offsetField;
 
     // messages table
-    @FXML
-    private TableView<MessageModel> messagesTable;
-    @FXML
-    private TableColumn<MessageModel, Integer> rowNumberColumn;
-    @FXML
-    private TableColumn<MessageModel, Integer> partitionColumn;
-    @FXML
-    private TableColumn<MessageModel, Long> offsetColumn;
-    @FXML
-    private TableColumn<MessageModel, String> keyColumn;
-    @FXML
-    private TableColumn<MessageModel, String> messageSummaryColumn;
-    @FXML
-    private TableColumn<MessageModel, Date> timestampColumn;
+    @FXML private TableView<MessageModel> messagesTable;
+    @FXML private TableColumn<MessageModel, Integer> rowNumberColumn;
+    @FXML private TableColumn<MessageModel, Integer> partitionColumn;
+    @FXML private TableColumn<MessageModel, Long> offsetColumn;
+    @FXML private TableColumn<MessageModel, String> keyColumn;
+    @FXML private TableColumn<MessageModel, String> messageSummaryColumn;
+    @FXML private TableColumn<MessageModel, Date> timestampColumn;
 
-    @FXML
-    private CodeArea messageArea;
+    @FXML private CodeArea messageArea;
 
     private CusterItemViewSettings settings;
 
-    private MessagesModel messagesModel = new MessagesModel();;
+    private MessagesModel messagesModel = new MessagesModel();
+    ;
     private boolean loading = false;
     private String fetchFrom = "End";
     boolean currentNodeStale = false;
@@ -119,7 +96,8 @@ public class BrowseClusterItemViewController
     private BooleanProperty followTreeSelection = new SimpleBooleanProperty(true);
     // private double messageAreaScrollV = 0.0;
 
-    public BrowseClusterItemViewController(KafkaReader kafkaReader, CusterItemViewSettings settings) {
+    public BrowseClusterItemViewController(
+            KafkaReader kafkaReader, CusterItemViewSettings settings) {
         this.kafkaReader = kafkaReader;
         this.settings = settings;
         kafkaReader.getKafkaInstance().addConnectionListener(this);
@@ -150,21 +128,26 @@ public class BrowseClusterItemViewController
         messageSummaryColumn.setCellValueFactory(new PropertyValueFactory<>("messageSummary"));
         timestampColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
 
-        messagesTable.getSelectionModel().selectedItemProperty()
-                .addListener((observableValue, oldMessage, newMessage) -> displayMessage(newMessage));
+        messagesTable
+                .getSelectionModel()
+                .selectedItemProperty()
+                .addListener(
+                        (observableValue, oldMessage, newMessage) -> displayMessage(newMessage));
 
         var messagesContextMenu = new ContextMenu();
         var saveItem = new MenuItem("Save selected message");
         var saveAllItem = new MenuItem("Save all messages");
         final String format = ".dat";
-        saveItem.setOnAction(event -> {
-            var messages = getSelectedMessages();
-            save(messages, format);
-        });
-        saveAllItem.setOnAction(event -> {
-            var messages = messagesTable.getItems();
-            save(messages, format);
-        });
+        saveItem.setOnAction(
+                event -> {
+                    var messages = getSelectedMessages();
+                    save(messages, format);
+                });
+        saveAllItem.setOnAction(
+                event -> {
+                    var messages = messagesTable.getItems();
+                    save(messages, format);
+                });
         messagesContextMenu.getItems().add(saveItem);
         messagesTable.setContextMenu(messagesContextMenu);
 
@@ -184,11 +167,14 @@ public class BrowseClusterItemViewController
         removeRows();
         setupCursorBox();
 
-        timeField.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
-                sanitizeTimeField();
-            }
-        });
+        timeField
+                .focusedProperty()
+                .addListener(
+                        (observable, oldValue, newValue) -> {
+                            if (!newValue) {
+                                sanitizeTimeField();
+                            }
+                        });
     }
 
     private void removeRows() {
@@ -204,9 +190,12 @@ public class BrowseClusterItemViewController
         this.fetchFromBox.valueProperty().setValue("End");
         setFetchFrom("End");
         datePicker.setValue(LocalDate.now());
-        fetchFromBox.valueProperty().addListener((observableValue, oldValue, newValue) -> {
-            setFetchFrom(newValue);
-        });
+        fetchFromBox
+                .valueProperty()
+                .addListener(
+                        (observableValue, oldValue, newValue) -> {
+                            setFetchFrom(newValue);
+                        });
     }
 
     private void setFetchFrom(String newValue) {
@@ -234,13 +223,16 @@ public class BrowseClusterItemViewController
 
     private void setupMessageCountBox() {
         messageCountBox.setValue("" + settings.getBatchSize());
-        messageCountBox.valueProperty().addListener((observableValue, oldValue, newValue) -> {
-            try {
-                settings.setBatchSize(Integer.parseInt(newValue));
-            } catch (NumberFormatException e) {
-                settings.setBatchSize(Integer.parseInt(oldValue));
-            }
-        });
+        messageCountBox
+                .valueProperty()
+                .addListener(
+                        (observableValue, oldValue, newValue) -> {
+                            try {
+                                settings.setBatchSize(Integer.parseInt(newValue));
+                            } catch (NumberFormatException e) {
+                                settings.setBatchSize(Integer.parseInt(oldValue));
+                            }
+                        });
     }
 
     private void onConnectButtonClick(ActionEvent actionEvent) {
@@ -271,8 +263,7 @@ public class BrowseClusterItemViewController
     }
 
     @Override
-    public void topicsUpdated(Map<String, List<PartitionInfo>> topics) {
-    }
+    public void topicsUpdated(Map<String, List<PartitionInfo>> topics) {}
 
     @Override
     public void notifyUrlChange(String name, String oldUrl, String newUrl) {
@@ -299,9 +290,9 @@ public class BrowseClusterItemViewController
 
     private void updateView(AbstractNode selectedNode) {
         if (selectedNode.getType().equals(NodeType.PARTITION)) {
-          if (!fetchFromBox.getItems().contains("Offset")) {
-            fetchFromBox.getItems().add("Offset");
-          }
+            if (!fetchFromBox.getItems().contains("Offset")) {
+                fetchFromBox.getItems().add("Offset");
+            }
         } else {
             fetchFromBox.getItems().remove("Offset");
         }
@@ -327,44 +318,52 @@ public class BrowseClusterItemViewController
     }
 
     @Override
-    public void messagesReceived(List<ConsumerRecord<String, byte[]>> records, Object sender, int batchNumber,
+    public void messagesReceived(
+            List<ConsumerRecord<String, byte[]>> records,
+            Object sender,
+            int batchNumber,
             boolean moreToCome) {
         if (records == null) {
             return;
         }
         log.info("Received {} messages", records.size());
-        Platform.runLater(() -> {
-            log.info("Processing {} messages", records.size());
-            // update the sender node
-            var senderNode = (AbstractNode) sender;
-            var formatter = getFormatter(senderNode);
-            if (batchNumber == 1) {
-                var messages = createMessages(0, records, formatter);
-                senderNode.setMessages(messages);
-            } else {
-                var messages = createMessages(senderNode.getMessages().size(), records, formatter);
-                senderNode.addMessages(messages);
-            }
-            log.info("Added {} messages to the node", records.size());
+        Platform.runLater(
+                () -> {
+                    log.info("Processing {} messages", records.size());
+                    // update the sender node
+                    var senderNode = (AbstractNode) sender;
+                    var formatter = getFormatter(senderNode);
+                    if (batchNumber == 1) {
+                        var messages = createMessages(0, records, formatter);
+                        senderNode.setMessages(messages);
+                    } else {
+                        var messages =
+                                createMessages(senderNode.getMessages().size(), records, formatter);
+                        senderNode.addMessages(messages);
+                    }
+                    log.info("Added {} messages to the node", records.size());
 
-            setLoadingStatus(moreToCome);
+                    setLoadingStatus(moreToCome);
 
-            if (currentNode == senderNode) {
-                updateMessagesTable();
-                log.info("Added {} messages to the table", records.size());
-            } else {
-                if (currentNodeStale) {
-                    fetchMessages(currentNode);
-                    currentNodeStale = false;
-                } else {
-                    // new Alert(Alert.AlertType.WARNING, "currentTopicNode != senderNode, and
-                    // currentNodeStale is false")
-                    // .showAndWait();
-                    log.warn("currentTopicNode{} != senderNode{}, and currentNodeStale is false", currentNode,
-                            senderNode);
-                }
-            }
-        });
+                    if (currentNode == senderNode) {
+                        updateMessagesTable();
+                        log.info("Added {} messages to the table", records.size());
+                    } else {
+                        if (currentNodeStale) {
+                            fetchMessages(currentNode);
+                            currentNodeStale = false;
+                        } else {
+                            // new Alert(Alert.AlertType.WARNING, "currentTopicNode != senderNode,
+                            // and
+                            // currentNodeStale is false")
+                            // .showAndWait();
+                            log.warn(
+                                    "currentTopicNode{} != senderNode{}, and currentNodeStale is false",
+                                    currentNode,
+                                    senderNode);
+                        }
+                    }
+                });
     }
 
     private MessageFormatter getFormatter(AbstractNode senderNode) {
@@ -434,9 +433,11 @@ public class BrowseClusterItemViewController
         try {
             var topicPartitions = getTopicPartitions(node);
             if (epochMilli >= 0) {
-                kafkaReader.getMessagesFromTimeAsync(topicPartitions, settings.getBatchSize(), epochMilli, this, node);
+                kafkaReader.getMessagesFromTimeAsync(
+                        topicPartitions, settings.getBatchSize(), epochMilli, this, node);
             } else {
-                kafkaReader.getMessagesAsync(topicPartitions, settings.getBatchSize(), offset, this, node);
+                kafkaReader.getMessagesAsync(
+                        topicPartitions, settings.getBatchSize(), offset, this, node);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -508,14 +509,23 @@ public class BrowseClusterItemViewController
         refreshButton.setText(isLoading ? "Stop" : "Refresh");
     }
 
-    private static List<MessageModel> createMessages(int startRow, List<ConsumerRecord<String, byte[]>> records,
+    private static List<MessageModel> createMessages(
+            final int startRow,
+            List<ConsumerRecord<String, byte[]>> records,
             MessageFormatter formatter) {
-        final var row = new Object() {
-            public int value = startRow;
-        };
+        class Holder {
+            public int value;
 
-        var messages = records.stream().map(record -> new MessageModel(++row.value, record, formatter))
-                .collect(Collectors.toList());
+            Holder(int startIndex) {
+                value = startIndex;
+            }
+        }
+        Holder holder = new Holder(startRow);
+
+        var messages =
+                records.stream()
+                        .map(record -> new MessageModel(++holder.value, record, formatter))
+                        .collect(Collectors.toList());
         return messages;
     }
 
@@ -524,8 +534,13 @@ public class BrowseClusterItemViewController
     }
 
     private void save(MessageModel message, String format) {
-        var path = Paths.get(SAVE_MESSAGE_DIR, kafkaReader.getKafkaInstance().getName(), message.getRecord().topic(),
-                "" + message.getPartition(), "" + message.getOffset() + format);
+        var path =
+                Paths.get(
+                        SAVE_MESSAGE_DIR,
+                        kafkaReader.getKafkaInstance().getName(),
+                        message.getRecord().topic(),
+                        "" + message.getPartition(),
+                        "" + message.getOffset() + format);
 
         try {
             File file = new File(path.toUri());
@@ -541,26 +556,28 @@ public class BrowseClusterItemViewController
     }
 
     private void setupMessagesToolbar() {
-        refreshButton.setOnAction(actionEvent -> {
-            if (!loading) {
-                messagesTable.requestFocus();
-                refreshMessages();
-            } else {
-                cancelRefreshMessages();
-            }
-        });
+        refreshButton.setOnAction(
+                actionEvent -> {
+                    if (!loading) {
+                        messagesTable.requestFocus();
+                        refreshMessages();
+                    } else {
+                        cancelRefreshMessages();
+                    }
+                });
 
         setupMessageCountBox();
         setupMessagesFilter();
-        collapseSettingsButton.setOnAction(actionEvent -> {
-            if (messagesBox.getChildren().contains(settingsPane)) {
-                messagesBox.getChildren().remove(settingsPane);
-                collapseSettingsButton.setText("<<");
-            } else {
-                messagesBox.getChildren().add(settingsPane);
-                collapseSettingsButton.setText(">>");
-            }
-        });
+        collapseSettingsButton.setOnAction(
+                actionEvent -> {
+                    if (messagesBox.getChildren().contains(settingsPane)) {
+                        messagesBox.getChildren().remove(settingsPane);
+                        collapseSettingsButton.setText("<<");
+                    } else {
+                        messagesBox.getChildren().add(settingsPane);
+                        collapseSettingsButton.setText(">>");
+                    }
+                });
     }
 
     private void refreshMessages() {
@@ -577,22 +594,35 @@ public class BrowseClusterItemViewController
         ObjectProperty<Predicate<MessageModel>> includeFilter = new SimpleObjectProperty<>();
         ObjectProperty<Predicate<MessageModel>> excludeFilter = new SimpleObjectProperty<>();
 
-        includeFilter.bind(Bindings.createObjectBinding(() -> message -> {
-            var filter = includeField.getText().toLowerCase();
-            var body = message.getMessageBody().toLowerCase();
-            return StringUtils.isEmpty(filter) || body.contains(filter);
-        }, includeField.textProperty()));
+        includeFilter.bind(
+                Bindings.createObjectBinding(
+                        () ->
+                                message -> {
+                                    var filter = includeField.getText().toLowerCase();
+                                    var body = message.getMessageBody().toLowerCase();
+                                    return StringUtils.isEmpty(filter) || body.contains(filter);
+                                },
+                        includeField.textProperty()));
 
-        excludeFilter.bind(Bindings.createObjectBinding(() -> message -> {
-            var filter = excludeField.getText().toLowerCase();
-            var body = message.getMessageBody().toLowerCase();
-            return StringUtils.isEmpty(filter) || !body.contains(filter);
-        }, excludeField.textProperty()));
+        excludeFilter.bind(
+                Bindings.createObjectBinding(
+                        () ->
+                                message -> {
+                                    var filter = excludeField.getText().toLowerCase();
+                                    var body = message.getMessageBody().toLowerCase();
+                                    return StringUtils.isEmpty(filter) || !body.contains(filter);
+                                },
+                        excludeField.textProperty()));
 
         FilteredList<MessageModel> filteredData = new FilteredList<>(messagesModel.getMessages());
 
-        filteredData.predicateProperty().bind(Bindings
-                .createObjectBinding(() -> includeFilter.get().and(excludeFilter.get()), includeFilter, excludeFilter));
+        filteredData
+                .predicateProperty()
+                .bind(
+                        Bindings.createObjectBinding(
+                                () -> includeFilter.get().and(excludeFilter.get()),
+                                includeFilter,
+                                excludeFilter));
 
         // 3. Wrap the FilteredList in a SortedList.
         SortedList<MessageModel> sortedData = new SortedList<>(filteredData);
